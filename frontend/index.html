@@ -1,0 +1,199 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>LTV Path Planner</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Share+Tech+Mono&family=Outfit:wght@300;400;600;700&family=JetBrains+Mono:wght@400;700&display=swap"
+        rel="stylesheet">
+    <link rel="stylesheet" href="style.css?v=2">
+</head>
+
+<body>
+    <div class="app-container">
+        <!-- Sidebar / Controls -->
+        <aside class="sidebar">
+            <header class="sidebar-header">
+                <h1>LTV Planner</h1>
+                <span class="status-indicator" id="connectionStatus">Back Online</span>
+            </header>
+
+            <!-- Path Controls -->
+            <section class="control-group">
+                <h3>Path Simulation</h3>
+                <div class="stat-grid">
+                    <div class="stat-card">
+                        <label>Points</label>
+                        <span id="pointCount">0</span>
+                    </div>
+                    <div class="stat-card">
+                        <label>Length</label>
+                        <span id="pathLength">0.0</span>
+                    </div>
+                </div>
+
+                <div class="input-grid">
+                    <div class="input-group">
+                        <label>kx</label>
+                        <input type="number" id="kxInput" value="1.5" step="0.1">
+                    </div>
+                    <div class="input-group">
+                        <label>ky</label>
+                        <input type="number" id="kyInput" value="3.0" step="0.1">
+                    </div>
+                    <div class="input-group">
+                        <label>kθ</label>
+                        <input type="number" id="kthetaInput" value="2.0" step="0.1">
+                    </div>
+                </div>
+
+                <!-- Tunable Lookahead -->
+                <div class="input-grid" style="margin-top: 10px;">
+                    <div class="input-group">
+                        <label>Min Lookahead</label>
+                        <input type="number" id="minLookaheadInput" value="10.0" step="1.0">
+                    </div>
+                    <div class="input-group">
+                        <label>Lookahead Gain</label>
+                        <input type="number" id="lookaheadGainInput" value="0.1" step="0.05">
+                    </div>
+                </div>
+
+                <div class="input-grid">
+                    <div class="input-group">
+                        <div class="input-group">
+                            <label>Start Angle°</label>
+                            <input type="number" id="startAngleInput" value="0" step="15">
+                        </div>
+                        <div class="input-group">
+                            <label>Robot W (in)</label>
+                            <input type="number" id="robotWidthInput" value="15" step="1">
+                        </div>
+                        <div class="input-group">
+                            <label>Robot H (in)</label>
+                            <input type="number" id="robotHeightInput" value="18" step="1">
+                        </div>
+                    </div>
+                    <div class="button-row" style="margin-top: 10px;">
+                        <button id="updateSizeBtn" class="btn btn-sm btn-ghost" style="width: 100%;">Update Robot
+                            Size</button>
+                    </div>
+
+                    <div class="button-row">
+                        <button id="startSimBtn" class="btn btn-primary">
+                            <span class="icon">▶</span> Start Sim
+                        </button>
+                        <button id="resetSimBtn" class="btn btn-danger">
+                            <span class="icon">↺</span> Reset
+                        </button>
+                    </div>
+
+                    <!-- Selected Point Editor (Hidden by default) -->
+                    <div class="input-grid" id="pointEditor" style="opacity: 0.3; pointer-events: none;">
+                        <div class="input-group">
+                            <label>Pt X</label>
+                            <input type="number" id="ptX" step="0.1">
+                        </div>
+                        <div class="input-group">
+                            <label>Pt Y</label>
+                            <input type="number" id="ptY" step="0.1">
+                        </div>
+                    </div>
+                    <div class="button-row">
+                        <button id="clearPathBtn" class="btn btn-secondary">Clear Path</button>
+                        <button id="savePathBtn" class="btn btn-ghost">Save</button>
+                        <button id="loadPathBtn" class="btn btn-ghost">Load</button>
+                        <input type="file" id="fileInput" hidden accept=".json">
+                    </div>
+            </section>
+
+            <!-- Motion Profile Controls -->
+            <section class="control-group">
+                <h3>Motion Profile</h3>
+
+                <div class="toggle-group">
+                    <label class="toggle-btn active">
+                        <input type="radio" name="profileType" value="trapezoidal" checked> Trapezoidal
+                    </label>
+                    <label class="toggle-btn">
+                        <input type="radio" name="profileType" value="s-curve"> S-Curve
+                    </label>
+                </div>
+
+                <div class="slider-group">
+                    <div class="slider-row">
+                        <label>Max Vel <span id="valMaxVel">60.0</span></label>
+                        <input type="range" id="sliderMaxVel" min="10" max="150" value="60">
+                    </div>
+                    <div class="slider-row">
+                        <label>Max Accel <span id="valMaxAccel">100.0</span></label>
+                        <input type="range" id="sliderMaxAccel" min="20" max="300" value="100">
+                    </div>
+                    <div class="slider-row">
+                        <label>Max Decel <span id="valMaxDecel">100.0</span></label>
+                        <input type="range" id="sliderMaxDecel" min="20" max="300" value="100">
+                    </div>
+                    <div class="slider-row">
+                        <label>Max Jerk <span id="valMaxJerk">500.0</span></label>
+                        <input type="range" id="sliderMaxJerk" min="100" max="2000" value="500">
+                    </div>
+                </div>
+
+                <div class="button-row">
+                    <button id="generateProfileBtn" class="btn btn-accent">Update Profile</button>
+                </div>
+            </section>
+
+            <div class="robot-telemetry">
+                <div class="telemetry-item">
+                    <span class="label">V:</span>
+                    <span class="value" id="telemV">0.0</span>
+                </div>
+                <div class="telemetry-item">
+                    <span class="label">A:</span>
+                    <span class="value" id="telemA">0.0</span>
+                </div>
+                <div class="telemetry-item">
+                    <span class="label">X:</span>
+                    <span class="value" id="telemX">0.0</span>
+                </div>
+                <div class="telemetry-item">
+                    <span class="label">Y:</span>
+                    <span class="value" id="telemY">0.0</span>
+                </div>
+            </div>
+        </aside>
+
+        <!-- Resizer Handle -->
+        <div class="resizer" id="dragHandle"></div>
+
+        <!-- Main Workspace -->
+        <main class="workspace">
+            <!-- Canvas Container -->
+            <div class="canvas-wrapper" id="canvasContainer">
+                <canvas id="fieldCanvas"></canvas>
+                <div class="canvas-controls">
+                    <button class="btn btn-ghost btn-sm" id="uploadBgBtn">Set Background</button>
+                    <input type="file" id="bgInput" hidden accept="image/*">
+                </div>
+            </div>
+
+            <!-- Bottom Panel: Graphs -->
+            <div class="bottom-panel">
+                <div class="graph-container">
+                    <canvas id="motionGraph"></canvas>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <!-- Scripts -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script type="module" src="js/app.js"></script>
+</body>
+
+</html>
