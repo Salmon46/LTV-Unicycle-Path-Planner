@@ -1,5 +1,7 @@
 # LTV Unicycle Path Planner
 
+![Picture of the application](image.png "Picture of the application")
+
 A comprehensive path planning and motion profiling application for unicycle-model robots (e.g., differential drive). This project features a Python FastAPI backend for heavy computational geometry and physics simulation, coupled with a responsive interactive frontend for visualization and control.
 
 ## Features
